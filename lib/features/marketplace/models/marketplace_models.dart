@@ -1,0 +1,143 @@
+class Company {
+  final int id;
+  final String name;
+  final String? description;
+  final String? logoUrl;
+  final String? phone;
+  final String? email;
+
+  Company({required this.id, required this.name, this.description, this.logoUrl, this.phone, this.email});
+
+  factory Company.fromJson(Map<String, dynamic> json) => Company(
+    id: json['id'],
+    name: json['name'] ?? '',
+    description: json['description'],
+    logoUrl: json['logoUrl'],
+    phone: json['phone'],
+    email: json['email'],
+  );
+}
+
+class Complex {
+  final int id;
+  final String name;
+  final String? description;
+  final String? imageUrl;
+  final String? address;
+
+  Complex({required this.id, required this.name, this.description, this.imageUrl, this.address});
+
+  factory Complex.fromJson(Map<String, dynamic> json) => Complex(
+    id: json['id'],
+    name: json['name'] ?? '',
+    description: json['description'],
+    imageUrl: json['imageUrl'],
+    address: json['address'],
+  );
+}
+
+class Apartment {
+  final int id;
+  final String apartmentNumber;
+  final int floor;
+  final int rooms;
+  final double areaTotal;
+  final double? areaLiving;
+  final double? areaKitchen;
+  final double pricePerSqm;
+  final double totalPrice;
+  final String status;
+  final String? layoutPlanUrl;
+
+  Apartment({
+    required this.id, required this.apartmentNumber, required this.floor,
+    required this.rooms, required this.areaTotal, this.areaLiving, this.areaKitchen,
+    required this.pricePerSqm, required this.totalPrice, required this.status,
+    this.layoutPlanUrl,
+  });
+
+  factory Apartment.fromJson(Map<String, dynamic> json) => Apartment(
+    id: json['id'],
+    apartmentNumber: json['apartmentNumber'] ?? '',
+    floor: json['floor'] ?? 0,
+    rooms: json['rooms'] ?? 0,
+    areaTotal: (json['areaTotal'] ?? 0).toDouble(),
+    areaLiving: json['areaLiving']?.toDouble(),
+    areaKitchen: json['areaKitchen']?.toDouble(),
+    pricePerSqm: (json['pricePerSqm'] ?? 0).toDouble(),
+    totalPrice: (json['totalPrice'] ?? 0).toDouble(),
+    status: json['status'] ?? 'AVAILABLE',
+    layoutPlanUrl: json['layoutPlanUrl'],
+  );
+
+  String get statusLabel {
+    switch (status) {
+      case 'AVAILABLE': return 'Свободна';
+      case 'PREBOOKED': return 'Предбронь';
+      case 'BOOKED': return 'Бронь';
+      case 'SOLD': return 'Продано';
+      default: return status;
+    }
+  }
+}
+
+class Booking {
+  final int id;
+  final String status;
+  final String? bookingType;
+  final String? apartmentNumber;
+  final String? buildingName;
+  final String createdAt;
+
+  Booking({required this.id, required this.status, this.bookingType, this.apartmentNumber, this.buildingName, required this.createdAt});
+
+  factory Booking.fromJson(Map<String, dynamic> json) => Booking(
+    id: json['id'],
+    status: json['status'] ?? '',
+    bookingType: json['bookingType'],
+    apartmentNumber: json['apartment']?['apartmentNumber'],
+    buildingName: json['apartment']?['building']?['name'],
+    createdAt: json['createdAt'] ?? '',
+  );
+
+  String get statusLabel {
+    switch (status) {
+      case 'ACTIVE': return 'Активно';
+      case 'CONVERTED': return 'Оформлено';
+      case 'CANCELLED': return 'Отменено';
+      case 'EXPIRED': return 'Истекло';
+      default: return status;
+    }
+  }
+}
+
+class UserApartmentInfo {
+  final int apartmentId;
+  final String number;
+  final double? totalArea;
+  final int? floor;
+  final int? rooms;
+  final String? address;
+  final double totalPrice;
+  final double paidAmount;
+  final double remainingAmount;
+
+  UserApartmentInfo({
+    required this.apartmentId, required this.number, this.totalArea,
+    this.floor, this.rooms, this.address, required this.totalPrice,
+    required this.paidAmount, required this.remainingAmount,
+  });
+
+  factory UserApartmentInfo.fromJson(Map<String, dynamic> json) =>
+      UserApartmentInfo(
+        apartmentId: json['apartmentId'],
+        number: json['number'] ?? '',
+        totalArea: json['totalArea']?.toDouble(),
+        floor: json['floor'],
+        rooms: json['rooms'],
+        address: json['address'],
+        totalPrice: (json['totalPrice'] ?? 0).toDouble(),
+        paidAmount: (json['paidAmount'] ?? 0).toDouble(),
+        remainingAmount: (json['remainingAmount'] ?? 0).toDouble(),
+      );
+}
