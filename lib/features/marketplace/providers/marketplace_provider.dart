@@ -67,12 +67,17 @@ final apartmentDetailProvider = FutureProvider.family<Apartment, ApartmentDetail
 });
 
 // Bookings
-final myBookingsProvider = FutureProvider<List<Booking>>((ref) async {
-  final res = await api.get('/profile/bookings');
-  final data = res.data;
-  // Ответ paginated — берём content
-  final list = data is Map ? (data['content'] ?? []) : data;
-  return (list as List).map((e) => Booking.fromJson(e)).toList();
+final myBookingsProvider = FutureProvider.autoDispose<List<Booking>>((ref) async {
+  try {
+    final res = await api.get('/profile/bookings');
+    final data = res.data;
+    // Supports both paginated (content) and plain list response
+    final list = data is Map ? (data['content'] ?? []) : (data is List ? data : []);
+    return (list as List).map((e) => Booking.fromJson(e)).toList();
+  } catch (_) {
+    // 403 для консультантов — у них нет профиля покупателя
+    return [];
+  }
 });
 
 // Book apartment

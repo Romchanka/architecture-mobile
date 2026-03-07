@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/auth_provider.dart';
+import '../../profile/screens/profile_screen.dart'; // profileProvider
+import '../../marketplace/providers/marketplace_provider.dart'; // myBookingsProvider
 import '../../../core/theme/app_theme.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
@@ -93,6 +95,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     _passwordController.text,
                   );
                   if (ok && context.mounted) {
+                    // Invalidate providers so profile re-fetches with new token
+                    ref.invalidate(profileProvider);
+                    ref.invalidate(myBookingsProvider);
                     Navigator.of(context).pop();
                   }
                 },

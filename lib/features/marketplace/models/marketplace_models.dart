@@ -86,17 +86,35 @@ class Booking {
   final String status;
   final String? bookingType;
   final String? apartmentNumber;
-  final String? buildingName;
+  final int? apartmentId;
+  final String? userName;
+  final String? consultantName;
+  final String? notes;
+  final bool expired;
+  final bool active;
+  final bool hasContract;
   final String createdAt;
 
-  Booking({required this.id, required this.status, this.bookingType, this.apartmentNumber, this.buildingName, required this.createdAt});
+  Booking({
+    required this.id, required this.status, this.bookingType,
+    this.apartmentNumber, this.apartmentId, this.userName,
+    this.consultantName, this.notes,
+    this.expired = false, this.active = false, this.hasContract = false,
+    required this.createdAt,
+  });
 
   factory Booking.fromJson(Map<String, dynamic> json) => Booking(
     id: json['id'],
     status: json['status'] ?? '',
     bookingType: json['bookingType'],
-    apartmentNumber: json['apartment']?['apartmentNumber'],
-    buildingName: json['apartment']?['building']?['name'],
+    apartmentNumber: json['apartmentNumber']?.toString(),
+    apartmentId: json['apartmentId'],
+    userName: json['userName'],
+    consultantName: json['consultantName'],
+    notes: json['notes'],
+    expired: json['expired'] ?? false,
+    active: json['active'] ?? false,
+    hasContract: json['hasContract'] ?? false,
     createdAt: json['createdAt'] ?? '',
   );
 
