@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import '../providers/marketplace_provider.dart';
 import '../models/marketplace_models.dart';
 import '../../../core/theme/app_theme.dart';
+import '../widgets/floor_plan_widget.dart';
 
 final _fmt = NumberFormat('#,##0', 'ru_RU');
 
@@ -21,11 +22,12 @@ class ApartmentsScreen extends ConsumerStatefulWidget {
 
 class _ApartmentsScreenState extends ConsumerState<ApartmentsScreen> {
   int? _selectedRooms;
+  bool _showPlan = false;
 
   ApartmentFilter get _filter => ApartmentFilter(
     companyId: widget.companyId,
     complexId: widget.complexId,
-    rooms: _selectedRooms,
+    rooms: _showPlan ? null : _selectedRooms, // no room filter in plan mode
   );
 
   @override
@@ -33,58 +35,31 @@ class _ApartmentsScreenState extends ConsumerState<ApartmentsScreen> {
     final apartments = ref.watch(apartmentsProvider(_filter));
 
     return Scaffold(
-      appBar: AppBar(title: Text(widget.complexName ?? 'Квартиры')),
-      body: Column(
-        children: [
-          // Room filter chips
-          SizedBox(
-            height: 56,
-            child: ListView(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              children: [
-                _filterChip('Все', _selectedRooms == null, () => setState(() => _selectedRooms = null)),
-                _filterChip('1-комн.', _selectedRooms == 1, () => setState(() => _selectedRooms = 1)),
-                _filterChip('2-комн.', _selectedRooms == 2, () => setState(() => _selectedRooms = 2)),
-                _filterChip('3-комн.', _selectedRooms == 3, () => setState(() => _selectedRooms = 3)),
-                _filterChip('4+', _selectedRooms == 4, () => setState(() => _selectedRooms = 4)),
-              ],
-            ),
-          ),
-          Expanded(
-            child: apartments.when(
-              loading: () => _buildShimmerList(),
-              error: (e, _) => Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(Icons.error_outline, color: AppTheme.error, size: 48),
-                    const SizedBox(height: 16),
-                    ElevatedButton(
-                      onPressed: () => ref.invalidate(apartmentsProvider(_filter)),
-                      child: const Text('Повторить'),
-                    ),
-                  ],
-                ),
+      appBar: AppBar(
+        title: Text(widget.complexName ?? 'Квартиры'),
+      ),
+      body: apartments.when(
+        loading: () => const Center(child: CircularProgressIndicator(color: AppTheme.primary)),
+        error: (e, _) => Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.error_outline, color: AppTheme.error, size: 48),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () => ref.invalidate(apartmentsProvider(_filter)),
+                child: const Text('Повторить'),
               ),
-              data: (list) {
-                final available = list.where((a) => a.status == 'AVAILABLE').toList();
-                if (available.isEmpty) {
-                  return const Center(child: Text('Нет квартир', style: TextStyle(color: AppTheme.textSecondary)));
-                }
-                return RefreshIndicator(
-                  color: AppTheme.primary,
-                  onRefresh: () async => ref.invalidate(apartmentsProvider(_filter)),
-                  child: ListView.builder(
-                    padding: const EdgeInsets.all(16),
-                    itemCount: available.length,
-                    itemBuilder: (ctx, i) => _apartmentCard(context, available[i]),
-                  ),
-                );
-              },
-            ),
+            ],
           ),
-        ],
+        ),
+        data: (list) {
+          return FloorPlanWidget(
+            apartments: list,
+            companyId: widget.companyId,
+            complexName: widget.complexName,
+          );
+        },
       ),
     );
   }

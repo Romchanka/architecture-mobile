@@ -45,13 +45,13 @@ class ProfileScreen extends ConsumerStatefulWidget {
 class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   bool _editing = false;
   bool _saving = false;
-  bool _sseStarted = false;
 
   // Expansion state
   bool _apartmentsExpanded = true;
   bool _contractsExpanded = false;
   bool _bookingsExpanded = false;
   bool _paymentsExpanded = false;
+  bool _sseStarted = false;
 
   final _firstNameCtrl = TextEditingController();
   final _lastNameCtrl = TextEditingController();
@@ -84,33 +84,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final profileAsync = ref.watch(profileProvider);
     final bookings = ref.watch(myBookingsProvider);
 
-    // Запускаем SSE только когда авторизованы
-    if (auth.isAuthenticated && !_sseStarted) {
-      _sseStarted = true;
-      Future.microtask(() {
-        ref.read(notificationProvider.notifier).startListening();
-      });
-    }
+    // SSE уведомления теперь обрабатываются на уровне MainShell (app.dart)
 
-    // SSE уведомления — SnackBar СВЕРХУ
-    ref.listen<NotificationState>(notificationProvider, (prev, next) {
-      if (next.message != null && next.timestamp != prev?.timestamp) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(next.message!, style: const TextStyle(fontSize: 14)),
-            backgroundColor: AppTheme.primary.withOpacity(0.95),
-            behavior: SnackBarBehavior.floating,
-            duration: const Duration(seconds: 4),
-            margin: EdgeInsets.only(
-              bottom: MediaQuery.of(context).size.height - 150,
-              left: 12,
-              right: 12,
-            ),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          ),
-        );
-      }
-    });
     final contracts = ref.watch(myContractsProvider);
     final paymentSchedule = ref.watch(myPaymentScheduleProvider);
 

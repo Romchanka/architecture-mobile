@@ -36,7 +36,8 @@ class ApartmentFilter {
 final apartmentsProvider = FutureProvider.family<List<Apartment>, ApartmentFilter>((ref, filter) async {
   final params = <String, dynamic>{
     'companyId': filter.companyId,
-    'size': 100,
+    'status': 'ALL',
+    'size': 500,
   };
   if (filter.complexId != null) params['complexId'] = filter.complexId;
   if (filter.rooms != null) params['rooms'] = filter.rooms;

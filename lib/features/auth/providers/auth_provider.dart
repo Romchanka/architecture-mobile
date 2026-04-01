@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/api/api_client.dart';
+import '../../../core/api/sse_service.dart';
 import '../../../core/storage/secure_storage.dart';
 import '../models/auth_models.dart';
 
@@ -34,6 +35,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
           isAuthenticated: true,
           user: UserInfo.fromJson(res.data),
         );
+        // Автоматически подключаем SSE после проверки токена
+        sseService.connect();
       } catch (_) {
         await SecureStorage.clearTokens();
         state = AuthState();
@@ -51,6 +54,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
       // Fetch user info
       final userRes = await api.get('/auth/me');
       state = AuthState(isAuthenticated: true, user: UserInfo.fromJson(userRes.data));
+      // Подключаем SSE для получения уведомлений
+      sseService.connect();
       return true;
     } catch (e) {
       state = state.copyWith(isLoading: false, error: 'Неверный телефон или пароль');
@@ -67,6 +72,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
       final userRes = await api.get('/auth/me');
       state = AuthState(isAuthenticated: true, user: UserInfo.fromJson(userRes.data));
+      // Подключаем SSE для получения уведомлений
+      sseService.connect();
       return true;
     } catch (e) {
       state = state.copyWith(isLoading: false, error: 'Ошибка регистрации. Возможно, номер уже занят.');
@@ -75,6 +82,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   Future<void> logout() async {
+    sseService.disconnect();
     await SecureStorage.clearTokens();
     state = AuthState();
   }

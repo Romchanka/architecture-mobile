@@ -75,6 +75,7 @@ class Apartment {
       case 'AVAILABLE': return 'Свободна';
       case 'PREBOOKED': return 'Предбронь';
       case 'BOOKED': return 'Бронь';
+      case 'INSTALLMENT': return 'Рассрочка';
       case 'SOLD': return 'Продано';
       default: return status;
     }
