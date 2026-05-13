@@ -22,7 +22,12 @@ class CompaniesScreen extends ConsumerWidget {
           ),
         ],
       ),
-      body: companies.when(
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildStoriesSection(ref),
+          Expanded(
+            child: companies.when(
         loading: () => _buildShimmerList(),
         error: (e, _) => Center(
           child: Column(
@@ -50,7 +55,10 @@ class CompaniesScreen extends ConsumerWidget {
                   itemBuilder: (ctx, i) => _companyCard(context, list[i]),
                 ),
               ),
-      ),
+              ),
+            ),
+          ],
+        ),
     );
   }
 
@@ -60,7 +68,7 @@ class CompaniesScreen extends ConsumerWidget {
       decoration: BoxDecoration(
         color: AppTheme.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withOpacity(0.05)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
       ),
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
@@ -126,6 +134,152 @@ class CompaniesScreen extends ConsumerWidget {
           decoration: BoxDecoration(
             color: AppTheme.surface,
             borderRadius: BorderRadius.circular(16),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStoriesSection(WidgetRef ref) {
+    final storiesAsync = ref.watch(activeStoriesProvider);
+
+    return storiesAsync.when(
+      data: (stories) {
+        if (stories.isEmpty) return const SizedBox.shrink();
+        return Container(
+          height: 110,
+          margin: const EdgeInsets.only(top: 12, bottom: 4),
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            itemCount: stories.length,
+            itemBuilder: (context, i) {
+              final story = stories[i];
+              return GestureDetector(
+                onTap: () => _showStoryDialog(context, story),
+                child: Container(
+                  width: 76,
+                  margin: const EdgeInsets.only(right: 12),
+                  child: Column(
+                    children: [
+                      Container(
+                        width: 72,
+                        height: 72,
+                        padding: const EdgeInsets.all(3),
+                        decoration: const BoxDecoration(
+                          shape: BoxShape.circle,
+                          gradient: LinearGradient(
+                            colors: [AppTheme.primary, AppTheme.primaryDark],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                        ),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(color: AppTheme.background, width: 2),
+                          ),
+                          child: ClipOval(
+                            child: CachedNetworkImage(
+                              imageUrl: story.imageUrl,
+                              fit: BoxFit.cover,
+                              placeholder: (_, __) => Container(color: AppTheme.surfaceLight),
+                              errorWidget: (_, __, ___) => const Icon(Icons.error, color: Colors.grey),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        story.title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(fontSize: 11, color: Colors.white, fontWeight: FontWeight.w500),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        );
+      },
+      loading: () => const SizedBox(height: 110, child: Center(child: CircularProgressIndicator())),
+      error: (_, __) => const SizedBox.shrink(),
+    );
+  }
+
+  void _showStoryDialog(BuildContext context, story) {
+    showDialog(
+      context: context,
+      builder: (ctx) => Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.all(16),
+        child: Container(
+          width: double.infinity,
+          constraints: const BoxConstraints(maxHeight: 600),
+          decoration: BoxDecoration(
+            color: AppTheme.surface,
+            borderRadius: BorderRadius.circular(24),
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: Stack(
+            children: [
+              Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Flexible(
+                    child: CachedNetworkImage(
+                      imageUrl: story.imageUrl,
+                      fit: BoxFit.cover,
+                      placeholder: (_, __) => Container(height: 300, color: AppTheme.surfaceLight, child: const Center(child: CircularProgressIndicator())),
+                      errorWidget: (_, __, ___) => Container(height: 300, color: AppTheme.surfaceLight, child: const Icon(Icons.broken_image, size: 64, color: Colors.grey)),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(story.title, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white)),
+                        if (story.description != null && story.description!.isNotEmpty) ...[
+                          const SizedBox(height: 12),
+                          Text(story.description!, style: const TextStyle(fontSize: 15, color: AppTheme.textSecondary, height: 1.4)),
+                        ],
+                        if (story.linkUrl != null && story.linkUrl!.isNotEmpty) ...[
+                          const SizedBox(height: 20),
+                          SizedBox(
+                            width: double.infinity,
+                            height: 48,
+                            child: ElevatedButton(
+                              onPressed: () {
+                                // TODO: launchUrl(Uri.parse(story.linkUrl!));
+                                Navigator.pop(ctx);
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppTheme.primary,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              ),
+                              child: const Text('Подробнее', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black)),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              Positioned(
+                top: 12,
+                right: 12,
+                child: IconButton(
+                  icon: const Icon(Icons.close, color: Colors.white, shadows: [Shadow(blurRadius: 10, color: Colors.black54)]),
+                  onPressed: () => Navigator.pop(ctx),
+                ),
+              ),
+            ],
           ),
         ),
       ),

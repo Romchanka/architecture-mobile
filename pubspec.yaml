@@ -40,3 +40,10 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  assets:
+    - assets/images/floor-plan-typical.webp
+    - assets/images/floor-plan-17.webp
+    - assets/images/floor-plan-18.webp
+    - assets/images/floor-plan-19.webp
+    - assets/images/parking-plan.webp
+    - assets/images/parking-plan-2.webp

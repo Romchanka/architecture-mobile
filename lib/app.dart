@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/theme/app_theme.dart';
 import 'features/auth/screens/login_screen.dart';
@@ -9,6 +9,7 @@ import 'features/marketplace/screens/companies_screen.dart';
 import 'features/marketplace/screens/complexes_screen.dart';
 import 'features/marketplace/screens/apartments_screen.dart';
 import 'features/marketplace/screens/apartment_detail_screen.dart';
+import 'features/marketplace/screens/parking_screen.dart';
 import 'features/profile/screens/profile_screen.dart';
 
 /// Глобальные ключи для вложенных навигаторов каждого таба.
@@ -112,6 +113,12 @@ class _MainShellState extends ConsumerState<MainShell> {
                       complexName: args['complexName'],
                     );
                     break;
+                  case '/parking':
+                    final args = settings.arguments as Map<String, dynamic>;
+                    page = ParkingScreen(
+                      companyId: args['companyId'],
+                    );
+                    break;
                   case '/apartment-detail':
                     final args = settings.arguments as Map<String, dynamic>;
                     page = ApartmentDetailScreen(
@@ -141,7 +148,7 @@ class _MainShellState extends ConsumerState<MainShell> {
           decoration: BoxDecoration(
             color: AppTheme.surface,
             border: Border(
-              top: BorderSide(color: Colors.white.withOpacity(0.05)),
+              top: BorderSide(color: Colors.white.withValues(alpha: 0.05)),
             ),
           ),
           child: BottomNavigationBar(

@@ -99,7 +99,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       ),
     );
     setState(() => _loading = false);
-    if (ok && context.mounted) {
+    if (ok && mounted) {
       Navigator.of(context).pop();
     } else {
       setState(() => _error = ref.read(authProvider).error ?? 'Ошибка регистрации');
@@ -137,9 +137,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   padding: const EdgeInsets.all(12),
                   margin: const EdgeInsets.only(bottom: 16),
                   decoration: BoxDecoration(
-                    color: AppTheme.error.withOpacity(0.1),
+                    color: AppTheme.error.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: AppTheme.error.withOpacity(0.3)),
+                    border: Border.all(color: AppTheme.error.withValues(alpha: 0.3)),
                   ),
                   child: Text(_error!, style: const TextStyle(color: AppTheme.error, fontSize: 14)),
                 ),

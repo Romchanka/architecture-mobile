@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import '../providers/marketplace_provider.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/utils/auth_dialog.dart';
 
 final _fmt = NumberFormat('#,##0', 'ru_RU');
 
@@ -57,12 +58,12 @@ class _ApartmentDetailScreenState extends ConsumerState<ApartmentDetailScreen> {
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                     colors: [
-                      AppTheme.primary.withOpacity(0.15),
+                      AppTheme.primary.withValues(alpha: 0.15),
                       AppTheme.surface,
                     ],
                   ),
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: AppTheme.primary.withOpacity(0.2)),
+                  border: Border.all(color: AppTheme.primary.withValues(alpha: 0.2)),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -80,8 +81,8 @@ class _ApartmentDetailScreenState extends ConsumerState<ApartmentDetailScreen> {
                           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                           decoration: BoxDecoration(
                             color: apt.status == 'AVAILABLE'
-                                ? AppTheme.success.withOpacity(0.15)
-                                : AppTheme.warning.withOpacity(0.15),
+                                ? AppTheme.success.withValues(alpha: 0.15)
+                                : AppTheme.warning.withValues(alpha: 0.15),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(apt.statusLabel,
@@ -110,7 +111,7 @@ class _ApartmentDetailScreenState extends ConsumerState<ApartmentDetailScreen> {
                     decoration: BoxDecoration(
                       color: AppTheme.surface,
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: Colors.white.withOpacity(0.05)),
+                      border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
                     ),
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(16),
@@ -144,7 +145,7 @@ class _ApartmentDetailScreenState extends ConsumerState<ApartmentDetailScreen> {
                 decoration: BoxDecoration(
                   color: AppTheme.surface,
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.white.withOpacity(0.05)),
+                  border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
                 ),
                 child: Column(
                   children: [
@@ -170,7 +171,11 @@ class _ApartmentDetailScreenState extends ConsumerState<ApartmentDetailScreen> {
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    onPressed: !auth.isAuthenticated || _booking ? null : () async {
+                    onPressed: _booking ? null : () async {
+                      if (!auth.isAuthenticated) {
+                        showAuthDialog(context);
+                        return;
+                      }
                       setState(() => _booking = true);
                       try {
                         await bookApartment(widget.companyId, widget.apartmentId);
@@ -198,8 +203,8 @@ class _ApartmentDetailScreenState extends ConsumerState<ApartmentDetailScreen> {
                     child: _booking
                         ? const SizedBox(width: 24, height: 24,
                             child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black))
-                        : Text(auth.isAuthenticated ? 'Забронировать' : 'Войдите для бронирования',
-                            style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w600)),
+                        : const Text('Забронировать',
+                            style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600)),
                   ),
                 ),
             ],
@@ -265,7 +270,7 @@ class _ApartmentDetailScreenState extends ConsumerState<ApartmentDetailScreen> {
       decoration: BoxDecoration(
         color: AppTheme.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withOpacity(0.05)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

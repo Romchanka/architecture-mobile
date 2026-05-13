@@ -48,12 +48,13 @@ class Apartment {
   final double totalPrice;
   final String status;
   final String? layoutPlanUrl;
+  final int? buildingId;
 
   Apartment({
     required this.id, required this.apartmentNumber, required this.floor,
     required this.rooms, required this.areaTotal, this.areaLiving, this.areaKitchen,
     required this.pricePerSqm, required this.totalPrice, required this.status,
-    this.layoutPlanUrl,
+    this.layoutPlanUrl, this.buildingId,
   });
 
   factory Apartment.fromJson(Map<String, dynamic> json) => Apartment(
@@ -68,6 +69,7 @@ class Apartment {
     totalPrice: (json['totalPrice'] ?? 0).toDouble(),
     status: json['status'] ?? 'AVAILABLE',
     layoutPlanUrl: json['layoutPlanUrl'],
+    buildingId: json['buildingId'],
   );
 
   String get statusLabel {
@@ -160,3 +162,73 @@ class UserApartmentInfo {
         remainingAmount: (json['remainingAmount'] ?? 0).toDouble(),
       );
 }
+
+class ParkingSpace {
+  final int id;
+  final String number;
+  final int? buildingId;
+  final String? level;
+  final double area;
+  final double price;
+  final String status;
+  final bool isStacker;
+  final String? notes;
+
+  ParkingSpace({
+    required this.id,
+    required this.number,
+    this.buildingId,
+    this.level,
+    required this.area,
+    required this.price,
+    required this.status,
+    this.isStacker = false,
+    this.notes,
+  });
+
+  factory ParkingSpace.fromJson(Map<String, dynamic> json) => ParkingSpace(
+    id: json['id'],
+    number: json['number'] ?? '',
+    buildingId: json['buildingId'],
+    level: json['level'],
+    area: (json['area'] ?? 0).toDouble(),
+    price: (json['price'] ?? 0).toDouble(),
+    status: json['status'] ?? 'AVAILABLE',
+    isStacker: json['isStacker'] ?? false,
+    notes: json['notes'],
+  );
+
+  String get statusLabel {
+    switch (status) {
+      case 'AVAILABLE': return 'Свободна';
+      case 'RESERVED': return 'Бронь';
+      case 'SOLD': return 'Продано';
+      default: return status;
+    }
+  }
+}
+
+class Story {
+  final int id;
+  final String title;
+  final String? description;
+  final String imageUrl;
+  final String? linkUrl;
+
+  Story({
+    required this.id,
+    required this.title,
+    this.description,
+    required this.imageUrl,
+    this.linkUrl,
+  });
+
+  factory Story.fromJson(Map<String, dynamic> json) => Story(
+    id: json['id'],
+    title: json['title'] ?? '',
+    description: json['description'],
+    imageUrl: json['imageUrl'] ?? '',
+    linkUrl: json['linkUrl'],
+  );
+}
+

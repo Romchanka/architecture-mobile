@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:shimmer/shimmer.dart';
@@ -61,7 +61,7 @@ class ComplexesScreen extends ConsumerWidget {
       decoration: BoxDecoration(
         color: AppTheme.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withOpacity(0.05)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
       ),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
@@ -98,7 +98,7 @@ class ComplexesScreen extends ConsumerWidget {
                 height: 120,
                 color: AppTheme.surfaceLight,
                 child: Center(
-                  child: Icon(Icons.apartment_rounded, size: 48, color: AppTheme.primary.withOpacity(0.3)),
+                  child: Icon(Icons.apartment_rounded, size: 48, color: AppTheme.primary.withValues(alpha: 0.3)),
                 ),
               ),
 
