@@ -2,67 +2,123 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:shimmer/shimmer.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../providers/marketplace_provider.dart';
+import '../models/marketplace_models.dart';
 import '../../../core/theme/app_theme.dart';
 
-class CompaniesScreen extends ConsumerWidget {
+class CompaniesScreen extends ConsumerStatefulWidget {
   const CompaniesScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<CompaniesScreen> createState() => _CompaniesScreenState();
+}
+
+class _CompaniesScreenState extends ConsumerState<CompaniesScreen> {
+  bool _isSearching = false;
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final companies = ref.watch(companiesProvider);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Застройщики'),
+        title: _isSearching
+            ? TextField(
+                controller: _searchController,
+                autofocus: true,
+                style: const TextStyle(color: Colors.white, fontSize: 18),
+                decoration: const InputDecoration(
+                  hintText: 'Поиск застройщика...',
+                  hintStyle: TextStyle(color: AppTheme.textMuted),
+                  border: InputBorder.none,
+                ),
+                onChanged: (value) {
+                  setState(() {
+                    _searchQuery = value;
+                  });
+                },
+              )
+            : const Text('Застройщики'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.search),
-            onPressed: () {}, // TODO: search
+            icon: Icon(_isSearching ? Icons.close : Icons.search),
+            onPressed: () {
+              setState(() {
+                if (_isSearching) {
+                  _isSearching = false;
+                  _searchController.clear();
+                  _searchQuery = '';
+                } else {
+                  _isSearching = true;
+                }
+              });
+            },
           ),
         ],
       ),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildStoriesSection(ref),
+          _buildStoriesSection(),
           Expanded(
             child: companies.when(
-        loading: () => _buildShimmerList(),
-        error: (e, _) => Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.error_outline, color: AppTheme.error, size: 48),
-              const SizedBox(height: 16),
-              const Text('Ошибка загрузки', style: TextStyle(color: AppTheme.textSecondary)),
-              const SizedBox(height: 8),
-              ElevatedButton(
-                onPressed: () => ref.invalidate(companiesProvider),
-                child: const Text('Повторить'),
-              ),
-            ],
-          ),
-        ),
-        data: (list) => list.isEmpty
-            ? const Center(child: Text('Нет застройщиков', style: TextStyle(color: AppTheme.textSecondary)))
-            : RefreshIndicator(
-                color: AppTheme.primary,
-                onRefresh: () async => ref.invalidate(companiesProvider),
-                child: ListView.builder(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: list.length,
-                  itemBuilder: (ctx, i) => _companyCard(context, list[i]),
+              loading: () => _buildShimmerList(),
+              error: (e, _) => Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.error_outline, color: AppTheme.error, size: 48),
+                    const SizedBox(height: 16),
+                    const Text('Ошибка загрузки', style: TextStyle(color: AppTheme.textSecondary)),
+                    const SizedBox(height: 8),
+                    ElevatedButton(
+                      onPressed: () => ref.invalidate(companiesProvider),
+                      child: const Text('Повторить'),
+                    ),
+                  ],
                 ),
               ),
-              ),
+              data: (list) {
+                final filteredList = list
+                    .where((c) => c.name.toLowerCase().contains(_searchQuery.toLowerCase()))
+                    .toList();
+
+                if (filteredList.isEmpty) {
+                  return const Center(
+                    child: Text(
+                      'Ничего не найдено',
+                      style: TextStyle(color: AppTheme.textSecondary),
+                    ),
+                  );
+                }
+
+                return RefreshIndicator(
+                  color: AppTheme.primary,
+                  onRefresh: () async => ref.invalidate(companiesProvider),
+                  child: ListView.builder(
+                    padding: const EdgeInsets.all(16),
+                    itemCount: filteredList.length,
+                    itemBuilder: (ctx, i) => _companyCard(context, filteredList[i]),
+                  ),
+                );
+              },
             ),
-          ],
-        ),
+          ),
+        ],
+      ),
     );
   }
 
-  Widget _companyCard(BuildContext context, company) {
+  Widget _companyCard(BuildContext context, Company company) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
@@ -140,7 +196,7 @@ class CompaniesScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildStoriesSection(WidgetRef ref) {
+  Widget _buildStoriesSection() {
     final storiesAsync = ref.watch(activeStoriesProvider);
 
     return storiesAsync.when(
@@ -210,7 +266,7 @@ class CompaniesScreen extends ConsumerWidget {
     );
   }
 
-  void _showStoryDialog(BuildContext context, story) {
+  void _showStoryDialog(BuildContext context, Story story) {
     showDialog(
       context: context,
       builder: (ctx) => Dialog(
@@ -254,9 +310,15 @@ class CompaniesScreen extends ConsumerWidget {
                             width: double.infinity,
                             height: 48,
                             child: ElevatedButton(
-                              onPressed: () {
-                                // TODO: launchUrl(Uri.parse(story.linkUrl!));
-                                Navigator.pop(ctx);
+                              onPressed: () async {
+                                final uri = Uri.parse(story.linkUrl!);
+                                final navigator = Navigator.of(ctx);
+                                try {
+                                  await launchUrl(uri, mode: LaunchMode.externalApplication);
+                                } catch (e) {
+                                  debugPrint('Could not launch $uri: $e');
+                                }
+                                navigator.pop();
                               },
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: AppTheme.primary,
