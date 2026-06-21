@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -7,6 +7,7 @@ import '../providers/marketplace_provider.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/auth_dialog.dart';
+import 'package:dio/dio.dart';
 
 final _fmt = NumberFormat('#,##0', 'ru_RU');
 
@@ -188,9 +189,13 @@ class _ApartmentDetailScreenState extends ConsumerState<ApartmentDetailScreen> {
                         }
                       } catch (e) {
                         if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('Ошибка: $e'), backgroundColor: AppTheme.error),
-                          );
+                          if (e is DioException && (e.response?.statusCode == 401 || e.response?.statusCode == 403)) {
+                            showAuthDialog(context);
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Ошибка: $e'), backgroundColor: AppTheme.error),
+                            );
+                          }
                         }
                       } finally {
                         setState(() => _booking = false);

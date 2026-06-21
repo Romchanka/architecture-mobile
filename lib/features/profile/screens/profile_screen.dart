@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:image_picker/image_picker.dart' as img_picker;
+import 'package:dio/dio.dart' as dio_client;
 import '../../auth/providers/auth_provider.dart';
 import '../../auth/models/auth_models.dart';
 import '../../marketplace/providers/marketplace_provider.dart';
@@ -319,9 +321,167 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               ],
             ),
           ],
+          if (!_editing) ...[
+            const SizedBox(height: 16),
+            const Divider(color: Colors.white10),
+            const SizedBox(height: 8),
+            InkWell(
+              onTap: () => _showDocumentUploadMenu(context),
+              borderRadius: BorderRadius.circular(8),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8.0),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: AppTheme.primary.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Icon(Icons.document_scanner, color: AppTheme.primary, size: 20),
+                    ),
+                    const SizedBox(width: 12),
+                    const Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Загрузить паспорт', style: TextStyle(fontWeight: FontWeight.w600)),
+                          Text('Автозаполнение данных (OCR)', style: TextStyle(fontSize: 12, color: AppTheme.textSecondary)),
+                        ],
+                      ),
+                    ),
+                    const Icon(Icons.chevron_right, color: AppTheme.textMuted, size: 20),
+                  ],
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );
+  }
+
+  void _showDocumentUploadMenu(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppTheme.surface,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Padding(
+              padding: EdgeInsets.all(16.0),
+              child: Text('Загрузка паспорта', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            ),
+            ListTile(
+              leading: const Icon(Icons.contact_mail, color: AppTheme.primary),
+              title: const Text('Лицевая сторона'),
+              subtitle: const Text('Сторона с фото'),
+              onTap: () {
+                Navigator.pop(ctx);
+                _showImageSourceMenu(context, 'FRONT', 'лицевую');
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.credit_card, color: AppTheme.primary),
+              title: const Text('Обратная сторона'),
+              subtitle: const Text('Сторона с пропиской/ПИН'),
+              onTap: () {
+                Navigator.pop(ctx);
+                _showImageSourceMenu(context, 'BACK', 'обратную');
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showImageSourceMenu(BuildContext context, String side, String sideName) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppTheme.surface,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Text('Откуда загрузить $sideName сторону?', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            ),
+            ListTile(
+              leading: const Icon(Icons.camera_alt, color: AppTheme.primary),
+              title: const Text('Сделать фото'),
+              onTap: () {
+                Navigator.pop(ctx);
+                _uploadPassport(context, side, img_picker.ImageSource.camera);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library, color: AppTheme.primary),
+              title: const Text('Выбрать из галереи'),
+              onTap: () {
+                Navigator.pop(ctx);
+                _uploadPassport(context, side, img_picker.ImageSource.gallery);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _uploadPassport(BuildContext context, String side, img_picker.ImageSource source) async {
+    try {
+      final picker = img_picker.ImagePicker();
+      final img_picker.XFile? image = await picker.pickImage(source: source);
+      if (image == null) return;
+
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Загрузка ${side == 'FRONT' ? 'лицевой' : 'обратной'} стороны...')),
+      );
+
+      final formData = dio_client.FormData.fromMap({
+        'file': await dio_client.MultipartFile.fromFile(image.path, filename: image.name),
+        'side': side,
+      });
+
+      final res = await api.post('/profile/documents', data: formData);
+      
+      if (!context.mounted) return;
+      
+      final ocrResult = res.data['ocrResult'] ?? {};
+      final status = ocrResult['status'];
+      
+      if (status == 'COMPLETED') {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Паспорт успешно распознан! Данные обновлены.'), backgroundColor: AppTheme.primary),
+        );
+        ref.invalidate(profileProvider);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Паспорт загружен, но данные не удалось распознать. Статус: $status')),
+        );
+      }
+      
+    } on dio_client.DioException catch (e) {
+      if (!context.mounted) return;
+      String errMsg = 'Ошибка при загрузке документа';
+      if (e.response?.data != null && e.response!.data is Map && e.response!.data['error'] != null) {
+        errMsg = e.response!.data['error'];
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(errMsg), backgroundColor: AppTheme.error, duration: const Duration(seconds: 4)),
+      );
+    } catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Ошибка при загрузке документа'), backgroundColor: AppTheme.error),
+      );
+    }
   }
 
   // ── Expandable Section Builder ──
